@@ -35,7 +35,9 @@ https://github.com/ryantimwilson/Pintos-Project-3/tree/final/src
 >> A2: When two user processes both need a new frame at the same time,
 >> how are races avoided?
 
-The scan_lock must first be acquired before a process may begin to look for a frame. The scan_lock is only released after the frame is allocated or if no frame could be allocated to the page.  So no two pages can be looking for a frame at the same time avoiding the race condition between the different processes trying to acquire frames.
+The scan_lock must first be acquired before a process may begin to look for a frame. The scan_lock is only released after the frame is
+allocated or if no frame could be allocated to the page.  So no two pages can be looking for a frame at the same time avoiding the race
+condition between the different processes trying to acquire frames.
 
 		       PAGING TO AND FROM DISK
 		       =======================
@@ -45,7 +47,11 @@ The scan_lock must first be acquired before a process may begin to look for a fr
 >> B1: When a frame is required but none is free, some frame must be
 >> evicted.  Describe the algorithm used to choose a frame to evict.
 
-When choosing the next frame to evict the first we attempt to acquire the first frame of frames lock if the lock is not acquired the n we move onto the next frame and repeated the process. If a frame lock is acquired, then we check if the page in the frame has been accessed recently if. If the page in the frame hasn’t been accessed recently then that page is evicted from the frame and the new page is put into the frame. If the page has been accessed recently then the page is set as not accessed recently and then the next frame in frames is selected. 
+When choosing the next frame to evict the first we attempt to acquire the first frame of frames lock if the lock is not acquired then we
+move onto the next frame and repeated the process. If a frame lock is acquired, then we check if the page in the frame has been accessed
+recently if. If the page in the frame hasn’t been accessed recently then that page is evicted from the frame and the new page is put
+into the frame. If the page has been accessed recently then the page is set as not accessed recently and then the next frame in frames
+is selected. 
 
 >> B2: Explain your heuristic for deciding whether a page fault for an
 >> invalid virtual address should cause the stack to be extended into
