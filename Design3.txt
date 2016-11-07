@@ -30,6 +30,13 @@ https://github.com/ryantimwilson/Pintos-Project-3/tree/final/src
 >> A1: In a few paragraphs, describe the existing code for locating the
 >> frame, if any, that contains the data of a given page.
 
+To locate a particular frame a page first you get the hash table  of the process with thread_current()->pages and from there you can
+look up a particular page. Once the page is found to see what frame if any has the page simply accessing the frame struct stored within
+each of the page will give you the pointer to the particular frame that contain the pages data. 
+
+As each frame is connected directly to the page with this variable the process of accessing the frame from a known page is fairly simple
+as if the pointer exists then the frame an be found simply with accessing that pointer.
+
 ---- SYNCHRONIZATION ----
 
 >> A2: When two user processes both need a new frame at the same time,
@@ -57,6 +64,11 @@ is selected.
 >> invalid virtual address should cause the stack to be extended into
 >> the page that faulted.
 
+By checking if the address is >= 32 below the user_esp for the current thread  then the pointer is seen as invalid and the no new page
+isallocated , but f is not then a new page is allocated to the user. 32 below is chosen as the last valid pointer as it is he amount
+that pushal will put on the stack which is the max amount that should be able to be added to the stack at once.
+
+
 			 MEMORY MAPPED FILES
 			 ===================
 
@@ -66,14 +78,48 @@ is selected.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+In page.h 
+
+bool private - Allows the fie to be written bcak to a swap page if 
+
+struct file *file  - The file that is used by the page  to either read in information or write out information to.
+
+off_t file-offest – The  offset with the file in the page that must starts interactions with the file at.
+
+off_t file_bytes – the amount that is read/written from the file.
+
+In syscall.c
+
+struct mapping  -contains all of the information about a mapping 
+  {
+    struct list_elem elem;     	- list element for each of the mappings
+    int handle;                 - identification number of the mapping
+    struct file *file;          - file connected to the mapping 
+    uint8_t *base;              - starting point of the memory  mapping 
+    size_t page_cnt;            - number of pages in the memory mapping 
+  };
+
+
 ---- ALGORITHMS ----
 
 >> C2: Describe how memory mapped files integrate into your virtual
 >> memory subsystem.  Explain how the page fault and eviction
 >> processes differ between swap pages and other pages.
 
+Within the process we keep a list of all memory mapped files. The mapping and unmapping of files is handled in the system calls sys_mmap
+and sys_unmapping respectively. When mapping a file mapping struct is created and initialized with all of its fields from the file and
+then added to the mappings stored in the process. The file is the allocated to pages with the number of pages allocated dependent on
+length. Once all the needed pages are allocated the handle for the new mapping is returned. When unmapping the file the mapping is
+removed from the list and then the page is deallocated and the file is freed. When evicting pages the dirty bit is checked and if the
+pages are dirty then then the files are written out to their file unless they were flagged private all the rest of the situations just
+result in the page being freed. 
+
 >> C3: Explain how you determine whether a new file mapping overlaps
 >> any existing segment.
+
+In the page allocate function if the the page is allocate and already found within the hash table then there is an overlap. If there is
+an overlap indicated by the pages presence within the hash table then the allocate function returns null to hte mapp system call which
+inturn unmapps the file.
 
 ---- RATIONALE ----
 
@@ -83,6 +129,14 @@ is selected.
 >> that much of their implementation can be shared.  Explain why your
 >> implementation either does or does not share much of the code for
 >> the two situations.
+
+
+Much of the code is shared between the two as simply expanding the page structure to include information about the files allowed for
+much the code to be shared once additional function were added to the pagdir.c file to interact with the extended struct. Much of the
+code between the two situations is shared and only the areas where different handling is needed do we check for the type of situation
+this cuts down on a lot of redundant nearly identical code being needed.
+
+
 
 			   SURVEY QUESTIONS
 			   ================
