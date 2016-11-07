@@ -52,8 +52,9 @@ page_for_addr (const void *address)
         return hash_entry (e, struct page, hash_elem);
 
       /* No page.  Expand stack? */
-      //
-      if (address >= (thread_current()->user_esp - 0x20) && address < (PHYS_BASE + STACK_MAX))
+      // Loooks for valid address using users stack pointer
+      //if (address < PHYS_BASE + STACK_MAX && address >= thread_current()->user_esp - 32)
+      if (address >= PHYS_BASE - STACK_MAX && address >= thread_current ()->user_esp - 32)
       {
         newP = page_allocate((void *)address, false);
         return newP;
@@ -149,26 +150,62 @@ page_out (struct page *p)
      process to fault.  This must happen before checking the
      dirty bit, to prevent a race with the process dirtying the
      page. */
+  pagedir_clear_page(p->thread->pagedir, p->addr);
 
-  //
+  dirty = pagedir_is_dirty(p->thread->pagedir, p->addr);
+
+  if (p->file != NULL) 
+    {
+      if (dirty) 
+        {
+          if (p->private)
+            ok = swap_out (p);
+          else 
+            ok = file_write_at (p->file, p->frame->base, p->file_bytes,
+                                p->file_offset) == p->file_bytes;
+        }
+      else
+        ok = true;
+    }
+  else
+    ok = swap_out (p);
+  if (ok) 
+    {
+      //memset (p->frame->base, 0xcc, PGSIZE);
+      p->frame = NULL; 
+    }
+
+  /* Original Solution, on right track but issues with conditional logic 
+  Solution found from https://github.com/codyjack/Pintos-2/blob/master/src/vm/page.c
   pagedir_clear_page(p->thread->pagedir, p->addr);
 
   dirty = pagedir_is_dirty(p->thread->pagedir, p->addr);
   
+  if(p-> file == NULL)
+  {
+    ok = swap_out(p);
+    if(ok)
+    {
+      p->frame = NULL;
+    }
+  }
   if(dirty){
       if(p->private)
       {
           ok = swap_out(p);
-          p->frame = NULL;
       }
       else if ( !p->private && p->file != NULL)
       {
-          file_write_at(p->file, p->frame->base, p->file_bytes, p->file_offset);
-          p->frame = NULL;
+          file_write_at(p->file, p->frame->base, p->file_bytes, p->file_offset);         
       }
-      pagedir_set_dirty(p->thread->pagedir, p->addr, false);
+      p->frame = NULL;
+      //pagedir_set_dirty(p->thread->pagedir, p->addr, false);
   }
-  //
+  else
+  {
+    ok = true;
+  }
+  */
 
   return ok;
 }
